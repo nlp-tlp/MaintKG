@@ -1,3 +1,10 @@
+# Ignore everything in outputs
+outputs/*
+
+# But keep the directory with .gitkeep
+!outputs/.gitkeep
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
