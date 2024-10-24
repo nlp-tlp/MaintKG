@@ -1,3 +1,5 @@
+"""Utility resources."""
+
 corrections_dict = {
     "preasure": "pressure",
     "wotking": "working",
