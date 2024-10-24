@@ -35,7 +35,7 @@ class Relation(BaseModel):
     name: str
     type: Optional[str] = None
     properties: Optional[Dict[str, Any]] = Field(
-        None, description="The key-value pair properties of the relation."
+        default=None, description="The key-value pair properties of the relation."
     )
 
 
@@ -45,7 +45,7 @@ class Node(BaseModel):
     name: str = Field(..., description="The surface form of the node.")
     type: str = Field(..., description="The type of the node.")
     properties: Optional[Dict[str, Any]] = Field(
-        None, description="The key-value pair properties of the node."
+        default=None, description="The key-value pair properties of the node."
     )
 
 
