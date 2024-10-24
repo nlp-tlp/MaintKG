@@ -1,8 +1,8 @@
 # Ignore everything in outputs
-outputs/*
+output/*
 
 # But keep the directory with .gitkeep
-!outputs/.gitkeep
+!output/.gitkeep
 
 
 # Byte-compiled / optimized / DLL files
