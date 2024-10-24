@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 
-class BaseRecord(BaseModel):  # type: ignore
+class BaseRecord(BaseModel):
     """Single base maintenance work order record model."""
 
     ids: List[int] = Field(..., description="The list of unique identifiers.")
@@ -13,7 +13,7 @@ class BaseRecord(BaseModel):  # type: ignore
     original: str = Field(..., description="The original text.")
 
 
-class Records(BaseModel):  # type: ignore
+class Records(BaseModel):
     """Maintenance work order records model."""
 
     items: Dict[str, List[BaseRecord]] = Field(
@@ -21,7 +21,7 @@ class Records(BaseModel):  # type: ignore
     )
 
 
-class Relation(BaseModel):  # type: ignore
+class Relation(BaseModel):
     """Relation model."""
 
     name: str
@@ -31,7 +31,7 @@ class Relation(BaseModel):  # type: ignore
     )
 
 
-class Node(BaseModel):  # type: ignore
+class Node(BaseModel):
     """Node model."""
 
     name: str = Field(..., description="The surface form of the node.")
@@ -41,7 +41,7 @@ class Node(BaseModel):  # type: ignore
     )
 
 
-class Triple(BaseModel):  # type: ignore
+class Triple(BaseModel):
     """Triple model."""
 
     head: Node
