@@ -71,7 +71,3 @@ docstring-convention = "google"  # Use Google-style docstrings
 max-complexity = 10  # Maximum McCabe complexity
 require-return-type-doc = true
 require-param-type-doc = true
-
-[tool.pytest.ini_options]
-addopts = "-ra -q --cov=src"
-testpaths = ["tests"]
