@@ -1,10 +1,11 @@
-# Ignore everything in outputs, notebooks/assets
 output/*
 notebooks/assets/*
+_ontology
 
-# But keep the directory with .gitkeep
+# Keep the directories with .gitkeep
 !output/.gitkeep
 !notebooks/.gitkeep
+!model/.gitkeep
 
 
 # Byte-compiled / optimized / DLL files
