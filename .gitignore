@@ -1,8 +1,10 @@
-# Ignore everything in outputs
+# Ignore everything in outputs, assets
 output/*
+assets/*
 
 # But keep the directory with .gitkeep
 !output/.gitkeep
+!assets/.gitkeep
 
 
 # Byte-compiled / optimized / DLL files
