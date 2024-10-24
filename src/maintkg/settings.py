@@ -2,11 +2,14 @@
 
 import random
 from datetime import datetime
+from pathlib import Path
 from typing import Callable, Dict, List, Optional, Union
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
 from typing_extensions import Self
+
+from maintkg.utils.path_utils import get_cache_file, get_input_dir, get_output_dir
 
 
 def skewed_random_number(min_val: int, max_val: int) -> int:
@@ -35,12 +38,12 @@ def generate_random_date(min_year: int, max_year: int) -> str:
     return random_date.strftime("%d/%m/%Y")
 
 
-class Settings(BaseSettings):  # type: ignore
+class Settings(BaseSettings):
     """Settings for the MaintKG."""
 
-    csv_filepath: str = Field(
+    csv_filename: str = Field(
         ...,
-        description="Path to the CSV file containing CMMS maintenance work order records",
+        description="Filename of the input CSV file containing maintenance work order data.",
     )
     input_id_col: str = Field(..., description="Column name for the unique identifier")
     input_type_col: str = Field(..., description="Column name for the order type")
@@ -106,7 +109,7 @@ class Settings(BaseSettings):  # type: ignore
         description="Column name that is used to map to the order duration",
     )
     date_format: str = Field(
-        default="%d/%m/%Y", description="Standard date format for working with dates"
+        default="%Y-%m-%d", description="Standard date format for working with dates"
     )
 
     add_dummy_cols: bool = Field(
@@ -144,6 +147,20 @@ class Settings(BaseSettings):  # type: ignore
     NEO4J_USERNAME: str = Field("neo4j", description="Neo4j username")
     NEO4J_PASSWORD: str = Field("password", description="Neo4j password")
     NEO4J_DATABASE: str = Field("neo4j", description="Neo4j database")
+
+    IE_MODEL_INFERENCE_API_ENDPOINT: str = Field(
+        default="http://localhost:8000/predict/",
+        description="Endpoint for the IE model inference API",
+    )
+    IE_MODEL_BATCH_SIZE: int = Field(
+        default=256, description="Batch size for the IE model inference API"
+    )
+    IE_MODEL_CACHE_DIR: str = Field(
+        default="./cache", description="Directory to cache IE model predictions"
+    )
+    IE_MODEL_CACHE_FILENAME: str = Field(
+        default="cache.db", description="Filename for the IE model cache"
+    )
 
     @property
     def cols_to_keep(self: Self) -> List[str]:
@@ -202,3 +219,37 @@ class Settings(BaseSettings):  # type: ignore
         if self.input_time_col is None:
             cols[self.time_col] = lambda: skewed_random_number(0, 12 * 7)
         return cols
+
+    @property
+    def cache_file(self: Self) -> str:
+        """Get the cache file."""
+        return get_cache_file(filename=self.IE_MODEL_CACHE_FILENAME)
+
+    @property
+    def output_dir(self: Self) -> Path:
+        """Get the output directory path."""
+        return get_output_dir()
+
+    @property
+    def input_dir(self: Self) -> Path:
+        """Get the input directory path."""
+        return get_input_dir()
+
+    def get_output_subdir(self: Self, subdir: Optional[str] = None) -> Path:
+        """Get an output subdirectory path.
+
+        Parameters
+        ----------
+        subdir
+            Optional subdirectory name. If None, returns the base output dir.
+
+        Returns
+        -------
+        Path
+            Path to the requested output directory.
+        """
+        path = self.output_dir
+        if subdir:
+            path = path / subdir
+            path.mkdir(parents=True, exist_ok=True)
+        return path
