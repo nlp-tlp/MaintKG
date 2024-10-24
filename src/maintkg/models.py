@@ -1,8 +1,16 @@
 """Models."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple, TypeVar
 
 from pydantic import BaseModel, Field
+
+EntityType = str
+RelationType = str
+EntityName = str
+TripleTuple = Tuple[EntityName, EntityType, EntityName, EntityType, RelationType]
+TriplePattern = Tuple[EntityType, RelationType, EntityType]
+EntityMention = Tuple[EntityName, EntityType]
+CounterItem = TypeVar("CounterItem", str, TriplePattern)
 
 
 class BaseRecord(BaseModel):
@@ -85,3 +93,58 @@ class ProcessingSummary(BaseModel):
     unique_texts_not_processed_ave_len: float
     unique_texts: int
     unique_texts_ave_len: float
+
+
+class Prediction(BaseModel):
+    """Model for prediction results."""
+
+    passed: bool
+    entities: List[dict]
+    relations: List[dict]
+    norms: List[dict]
+    gen_output: str
+    issues: List[str]
+
+
+class RecordWithPreds(BaseModel):
+    """Model for record with predictions."""
+
+    properties: Dict[str, Any]
+    input: str
+    output: str
+    preds: Dict[str, Any]
+
+
+class FrequencyItem(BaseModel):
+    """Structure for frequency count items."""
+
+    item: str
+    count: int
+
+
+class TripleAnalysis(BaseModel):
+    """Structure for triple analysis results."""
+
+    Total: int
+    Total_Unique: int
+    Average_per_Document: float
+    Min_per_Document: int
+    Max_per_Document: int
+    Entities: Dict[str, int]
+    Total_Unique_Entity_Mentions: int
+    Relations: Dict[str, int]
+    Triple_Patterns: Dict[str, int]
+    Top_n_Most_Frequent_Entities: List[FrequencyItem]
+    Top_n_Most_Frequent_Relations: List[FrequencyItem]
+    Top_n_Most_Frequent_Triple_Patterns: List[FrequencyItem]
+
+
+class GenericAnalysis(BaseModel):
+    """Structure for generic analysis results."""
+
+    Total: int
+    Total_Unique: int
+    Average_per_Document: float
+    Min_per_Document: int
+    Max_per_Document: int
+    Top_n_Most_Frequent: List[Tuple[Tuple[Any, ...], int]]
