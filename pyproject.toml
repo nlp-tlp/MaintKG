@@ -1,0 +1,33 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "your-project"
+version = "0.1.0"
+authors = [
+    { name = "Tyler Bikaun", email = "tyler.bikaun@research.uwa.edu.au" },
+]
+description = "MaintKG - Maintenance Knowledge Graph"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = []
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+
+[tool.mypy]
+python_version = "3.8"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+
+[tool.pytest.ini_options]
+addopts = "-ra -q --cov=src"
+testpaths = ["tests"]
