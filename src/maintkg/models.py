@@ -47,3 +47,41 @@ class Triple(BaseModel):
     head: Node
     relation: Relation
     tail: Node
+
+
+class RecordTypeSummary(BaseModel):
+    """Summary of record types for a FLOC."""
+
+    planned: str
+    unplanned: str
+    other: str
+    total: int
+
+
+class DateDurationSummary(BaseModel):
+    """Summary of date durations for a FLOC."""
+
+    min: str
+    max: str
+
+
+class ProcessingSummary(BaseModel):
+    """Complete summary of data processing."""
+
+    total_records_all: int
+    unique_flocs_all: int
+    unplanned_records_all: int
+    focus_systems: Optional[List[str]]
+    focus_system_count: Optional[int]
+    record_types_by_floc: Dict[str, RecordTypeSummary]
+    record_date_durations_by_floc: Dict[str, DateDurationSummary]
+    total_records: int
+    unplanned_records: int
+    planned_records: int
+    other_records: int
+    unique_flocs_unplanned: int
+    unque_floc_record_counts: Dict[str, int]
+    unique_texts_not_processed: int
+    unique_texts_not_processed_ave_len: float
+    unique_texts: int
+    unique_texts_ave_len: float
