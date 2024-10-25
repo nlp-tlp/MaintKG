@@ -1,6 +1,10 @@
 # MaintKG: Automated Maintenance Knowledge Graph Construction
 [![Python 3.9](https://img.shields.io/badge/python-3.9-blue.svg)](https://www.python.org/downloads/release/python-390/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
+
+
 **MaintKG** (Maintenance Knowledge Graph) is a framework for automatically constructing knowledge graphs from maintenance work order records. It processes CMMS (Computerized Maintenance Management System) records to create structured, graph-based knowledge representations.
 
 ## 🚀 Features
@@ -19,6 +23,9 @@
 - [NoisIE Model](#-noisie-model)
 - [Contributing](#-contributing)
 - [License](#-license)
+- [Attribution](#-attribution)
+- [Acknowledgements](#-acknowledgments)
+- [Contact](#-contact)
 
 ## 🔧 Installation
 
@@ -50,14 +57,24 @@
 - **PyTorch** (CUDA-enabled recommended)
 - **Virtual Environment** (recommended)
 
+## 🔑 Environment Variables
+
+Update the `.env` file in the project root with your own configuration if you wish to create MaintKG from your own data. Otherwise the default will create the default graph.
+
+```plaintext
+# Input Settings
+INPUT__CSV_FILENAME='your_file.csv'
+INPUT__ID_COL='id'
+INPUT__TYPE_COL='type'
+# ... other settings
+
+# Full configuration example available in `.env`
+```
 ## 💻 Usage
 
 1. **Prepare Your Data**
    - Place your CMMS data in the `./input` directory
    - Configure column mappings by updating the `.env` file.
-
-<!-- TODO add more details about the .env file -->
-<!-- TODO make a note that the defaults of the .env are currently those that are used in the thesis Chapter/paper -->
 
 2. **Run the Pipeline**
    ```bash
@@ -119,7 +136,7 @@ Download the pretrained NoisIE model:
 python ./src/noisie/download_checkpoint.py
 ```
 
-This will download the model checkpoint to `./src/noisie/lightning_logs/`.
+This will download the model checkpoint to `./src/noisie/lightning_logs/`, making it available when you run the MaintKG process.
 
 
 ## 🤝 Contributing
@@ -156,18 +173,18 @@ We welcome contributions! Please follow these steps:
 
 This project is licensed under the MIT License - see [LICENSE](LICENSE) for details.
 
-## 🔍 Citation
+## 🔍 Attribution
 
 If you use MaintKG in your research, please cite:
 ```bibtex
-@article{maintkg2024,
-  title={MaintKG: Automated Knowledge Graph Construction from Maintenance Records},
-  author={[Author Names]},
-  journal={[Journal]},
-  year={2024}
-}
+COMING SOON
 ```
 
 ## 🙏 Acknowledgments
 
 This work was made possible by the [Australian Research Centre for Transforming Maintenance through Data Science](https://www.maintenance.org.au/display/PUBLIC).
+
+## 📧 Contact
+
+For questions, support, or collaboration:
+- **Email**: tyler.bikaun@research.uwa.edu.au
