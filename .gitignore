@@ -1,12 +1,16 @@
 output/*
 _ontology
 cache/*
+src/noisie/data/*
+src/noisie/lightning_logs/*
 
 # Keep the directories with .gitkeep
 !output/.gitkeep
 !notebooks/.gitkeep
 !model/.gitkeep
 !cache/.gitkeep
+!src/noisie/data/.gitkeep
+!src/noisie/lightning_logs/.gitkeep
 
 
 # Byte-compiled / optimized / DLL files
