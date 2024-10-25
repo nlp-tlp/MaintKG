@@ -1,109 +1,173 @@
-# Maintenance Knowledge Graph (MaintKG)
-**Maint**enance **K**nowledge **G**raph (MaintKG) is a graph-based knowledge representation and method for automatically constructing knowledge graphs from maintenance work order records and their short texts. This repository contains code for creating MaintKG from CMMS (Computerised Maintenance Management System) records.
+# MaintKG: Automated Maintenance Knowledge Graph Construction
+[![Python 3.9](https://img.shields.io/badge/python-3.9-blue.svg)](https://www.python.org/downloads/release/python-390/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+**MaintKG** (Maintenance Knowledge Graph) is a framework for automatically constructing knowledge graphs from maintenance work order records. It processes CMMS (Computerized Maintenance Management System) records to create structured, graph-based knowledge representations.
 
-## Table of Contents
-- Getting started
-- Prerequisites
-- Installation
-- Usage
-- Contributing
-- License
-- Attribution
+## 🚀 Features
 
-## Project Structure
-```
+- Automated knowledge graph construction from maintenance records
+- Built-in normalization and information extraction (NoisIE)
+- Neo4j integration for graph storage and querying
+- Comprehensive data processing pipeline
+
+## 📋 Table of Contents
+
+- [Installation](#-installation)
+- [Prerequisites](#-prerequisites)
+- [Usage](#-usage)
+- [Project Structure](#-project-structure)
+- [NoisIE Model](#-noisie-model)
+- [Contributing](#-contributing)
+- [License](#-license)
+
+## 🔧 Installation
+
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/nl-tlp/maintkg.git
+   cd maintkg
+   ```
+
+2. **Set Up Virtual Environment**
+   ```bash
+   python -m venv env
+   # On Unix/macOS:
+   source env/bin/activate
+   # On Windows:
+   .\env\Scripts\activate
+   ```
+
+3. **Install Dependencies**
+   ```bash
+   pip install -e .
+   pip install -r requirements.txt
+   ```
+
+## 📦 Prerequisites
+
+- **Python 3.9+**
+- **Neo4j** Database Server
+- **PyTorch** (CUDA-enabled recommended)
+- **Virtual Environment** (recommended)
+
+## 💻 Usage
+
+1. **Prepare Your Data**
+   - Place your CMMS data in the `./input` directory
+   - Configure column mappings by updating the `.env` file.
+
+<!-- TODO add more details about the .env file -->
+<!-- TODO make a note that the defaults of the .env are currently those that are used in the thesis Chapter/paper -->
+
+2. **Run the Pipeline**
+   ```bash
+   python ./src/maintkg/main.py
+   ```
+
+3. **View Results**
+   - Generated knowledge graphs are stored in Neo4j
+   - Output files are saved in `./output/YYYY-MM-DD_HH_MM-SS-MM/`
+
+##  📁Project Structure
+```plaintext
 maintkg/
-├── cache/                  # Cached information extraction results
-│   └── .gitkeep
-├── input/                  # Input data directory
-├── notebooks/             # Jupyter notebooks for analysis and examples
-│   ├── assets/           # Notebook resources
-│   └── example_queries.ipynb   # Queries that supplement the MaintKG chapter/paper competency questions
-├── output/                # Generated outputs
+├── cache/                          # Cache directory
+│   └── .gitkeep                    # Placeholder for git
+├── input/                          # Input data directory
+│   └── README.md                   # Input data specifications
+├── notebooks/                      # Jupyter notebooks
+│   ├── assets/                     # Notebook resources
+│   │   ├── images/                 # Visualization images
+│   │   └── data/                   # Sample datasets
+│   └── example_queries.ipynb       # MaintKG competency queries
+├── output/                         # Generated artifacts
 │   ├── .gitkeep
-│   └── YYYY-MM-DD_HH_MM-SS-MM/   # Generated output folders for MaintKG construction runs
-├── src/
-│   ├── maintkg/         # Core MaintKG package
+│   └── YYYY-MM-DD_HH_MM-SS-MM/    # Timestamped outputs
+├── src/                           # Source code
+│   ├── maintkg/                   # Core MaintKG package
+│   │   ├── __init__.py           # Package initialization
+│   │   ├── builder.py            # Graph construction logic
+│   │   ├── main.py              # Entry point script
+│   │   ├── models.py            # Data models and schemas
+│   │   ├── settings.py          # Configuration management
+│   │   └── utils/               # Utility functions
+│   ├── noisie/                   # NoisIE package
 │   │   ├── __init__.py
-│   │   ├── builder.py
-│   │   ├── main.py
-│   │   ├── models.py
-│   │   ├── settings.py
-│   │   └── utils/
-│   ├── noisie/          # Simultaneous normalisation and information extraction package
-│   └── rebel/           # Relation extraction package
-├── .git/
-├── .gitignore
-├── .pre-commit-config.yaml
-├── requirements.txt
-├── pyproject.toml
-├── LICENSE
-└── README.md
+│   │   ├── download_checkpoint.py  # Model checkpoint downloader
+│   │   ├── lightning_logs/      # Model checkpoints
+│   │   │   └── .gitkeep
+│   │   ├── data/                # MaintNormIE corpus
+│   │   │   └── README.md        # Data documentation
+│   └── rebel/                    # REBEL package
+│       ├── __init__.py
+│       ├── extractor.py         # Relation extraction
+│       └── utils/               # REBEL utilities
+├── .git/                        # Git repository
+├── .gitignore                   # Git ignore patterns
+├── .pre-commit-config.yaml      # Pre-commit hooks
+├── requirements.txt             # Project dependencies
+├── pyproject.toml              # Project configuration
+├── LICENSE                     # MIT License
+└── README.md                   # Project documentation
 ```
 
-## Getting Started
-These instructions will help you get a copy of the project up and running on your local machine.
+## 🤖 NoisIE Model
 
-### Prerequisites
-
-What things you need to install:
-
-- Neo4J
-- Python 3.9
-- venv
-- pytorch (cuda preferably)
-
-### Installation
-
-Need to install with `pip install -e .`
-
-1. Clone the repository
-```bash
-git clone https://github.com/nl-tlp/maintkg.git
-```
-
-2. Create a virtual environment (optional)
-```bash
-python -m venv env
-source env/bin/activate  # On Windows: env\Scripts\activate
-```
-
-3. Install dependencies
-```bash
-pip install -r requirements.txt
-```
-
-## Usage
-
-To run the MaintKG pipeline, first ensure your CMMS data is in the `./input` directory, and you have specified your columns, etc., in the `Settings` within `./src/maintkg/main.py`. After this, run the following command:
+Download the pretrained NoisIE model:
 
 ```bash
-python ./src/maintkg/main.py
+python ./src/noisie/download_checkpoint.py
 ```
 
-## Contributing
-We welcome contributions!
+This will download the model checkpoint to `./src/noisie/lightning_logs/`.
 
-### Semantic Commit Messages
-Format: `<type>(<scope>): <subject>`
 
-Types:
-- `feat`: New feature
-- `fix`: Bug fix
-- `docs`: Documentation
-- `style`: Formatting
-- `refactor`: Code restructuring
-- `test`: Adding tests
-- `chore`: Maintenance tasks
+## 🤝 Contributing
 
-### Pull Request Process
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feat/amazing-feature`)
-3. Run tests (`pytest`)
-4. Commit your changes (`git commit -m 'feat: add amazing feature'`)
-5. Push to the branch (`git push origin feat/amazing-feature`)
-6. Open a Pull Request
+We welcome contributions! Please follow these steps:
 
-## License
+1. **Fork & Clone**
+2. **Create Feature Branch**
+   ```bash
+   git checkout -b feature/amazing-feature
+   ```
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+3. **Follow Commit Convention**
+   ```
+   <type>(<scope>): <subject>
+
+   Types:
+   - feat: New feature
+   - fix: Bug fix
+   - docs: Documentation
+   - style: Formatting
+   - refactor: Code restructuring
+   - test: Testing
+   - chore: Maintenance
+   ```
+
+4. **Submit PR**
+   - Ensure tests pass
+   - Update documentation
+   - Follow code style guidelines
+
+
+## 📄 License
+
+This project is licensed under the MIT License - see [LICENSE](LICENSE) for details.
+
+## 🔍 Citation
+
+If you use MaintKG in your research, please cite:
+```bibtex
+@article{maintkg2024,
+  title={MaintKG: Automated Knowledge Graph Construction from Maintenance Records},
+  author={[Author Names]},
+  journal={[Journal]},
+  year={2024}
+}
+```
+
+## 🙏 Acknowledgments
+
+This work was made possible by the [Australian Research Centre for Transforming Maintenance through Data Science](https://www.maintenance.org.au/display/PUBLIC).
