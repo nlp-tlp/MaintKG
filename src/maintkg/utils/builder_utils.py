@@ -322,13 +322,13 @@ def create_enriched_semantic_triples(
 
 def load_and_clean_data(settings: Settings) -> Tuple[pd.DataFrame, Dict[str, int]]:
     """Load initial data and perform basic cleaning."""
-    df = pd.read_csv(settings.input_dir / settings.csv_filename)
+    df = pd.read_csv(settings.input_dir / settings.input.csv_filename)
     init_df_size = len(df)
     logger.info(f"Loaded {init_df_size} records")
 
     df.rename(columns=settings.col_mapping, inplace=True)
-    df = df.dropna(subset=[settings.floc_col])
-    df = df[df[settings.text_col].apply(lambda x: isinstance(x, str))]
+    df = df.dropna(subset=[settings.processing.floc_col])
+    df = df[df[settings.processing.text_col].apply(lambda x: isinstance(x, str))]
 
     logger.info(
         f"Dropped {init_df_size - len(df)} invalid rows (non-string texts and/or missing flocs)"
@@ -337,13 +337,13 @@ def load_and_clean_data(settings: Settings) -> Tuple[pd.DataFrame, Dict[str, int
     df = df[settings.cols_to_keep]
     return df, {
         "total_records_all": len(df),
-        "unique_flocs_all": len(df[settings.floc_col].unique()),
+        "unique_flocs_all": len(df[settings.processing.floc_col].unique()),
     }
 
 
 def add_dummy_columns(df: pd.DataFrame, settings: Settings) -> pd.DataFrame:
     """Add dummy columns if specified in settings."""
-    if settings.add_dummy_cols:
+    if settings.processing.add_dummy_cols:
         logger.debug(settings.dummy_cols)
         for col_name, func in settings.dummy_cols.items():
             if col_name not in df.columns:
@@ -353,7 +353,7 @@ def add_dummy_columns(df: pd.DataFrame, settings: Settings) -> pd.DataFrame:
 
 def format_numeric_columns(df: pd.DataFrame, settings: Settings) -> pd.DataFrame:
     """Format cost and time columns to numeric values."""
-    for col in [settings.cost_col, settings.time_col]:
+    for col in [settings.processing.cost_col, settings.processing.time_col]:
         if col in df.columns:
             df[col] = pd.to_numeric(
                 df[col].replace("[^0-9.]", "", regex=True).replace("", 0)
@@ -363,10 +363,10 @@ def format_numeric_columns(df: pd.DataFrame, settings: Settings) -> pd.DataFrame
 
 def format_date_column(df: pd.DataFrame, settings: Settings) -> pd.DataFrame:
     """Format date column according to specified format."""
-    if settings.start_date_col in df.columns:
-        df[settings.start_date_col] = pd.to_datetime(
-            df[settings.start_date_col], format=settings.input_date_format
-        ).dt.strftime(settings.date_format)
+    if settings.processing.start_date_col in df.columns:
+        df[settings.processing.start_date_col] = pd.to_datetime(
+            df[settings.processing.start_date_col], format=settings.input.date_format
+        ).dt.strftime(settings.processing.date_format)
     return df
 
 
@@ -377,34 +377,42 @@ def calculate_record_summaries(
     record_types = {}
     date_durations = {}
 
-    for floc, records in df.groupby(settings.floc_col):
+    for floc, records in df.groupby(settings.processing.floc_col):
         planned_count = len(
-            records[records[settings.type_col].isin(settings.planned_type_codes)]
+            records[
+                records[settings.processing.type_col].isin(
+                    settings.input.planned_type_codes
+                )
+            ]
         )
         unplanned_count = len(
-            records[records[settings.type_col].isin(settings.unplanned_type_codes)]
+            records[
+                records[settings.processing.type_col].isin(
+                    settings.input.unplanned_type_codes
+                )
+            ]
         )
         other_count = len(records) - planned_count - unplanned_count
         total_count = planned_count + unplanned_count + other_count
 
-        record_types[floc] = RecordTypeSummary(
-            planned=f"{planned_count} ({planned_count/total_count*100:0.2f})",
-            unplanned=f"{unplanned_count} ({unplanned_count/total_count*100:0.2f})",
-            other=f"{other_count} ({other_count/total_count*100:0.2f})",
-            total=total_count,
-        )
+        record_types[floc] = {
+            "planned": f"{planned_count} ({planned_count/total_count*100:0.2f})",
+            "unplanned": f"{unplanned_count} ({unplanned_count/total_count*100:0.2f})",
+            "other": f"{other_count} ({other_count/total_count*100:0.2f})",
+            "total": total_count,
+        }
 
-        date_durations[floc] = DateDurationSummary(
-            min=str(records[settings.start_date_col].min()),
-            max=str(records[settings.start_date_col].max()),
-        )
+        date_durations[floc] = {
+            "min": str(records[settings.processing.start_date_col].min()),
+            "max": str(records[settings.processing.start_date_col].max()),
+        }
 
-    return record_types, date_durations
+    return record_types, date_durations  # type: ignore
 
 
 def calculate_text_statistics(df: pd.DataFrame, settings: Settings) -> Dict[str, Any]:
     """Calculate statistics about text fields."""
-    unique_texts_raw = set(df[settings.text_col])
+    unique_texts_raw = set(df[settings.processing.text_col])
     unique_texts_processed = set(df["input"])
 
     return {
