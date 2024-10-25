@@ -21,6 +21,7 @@
 - [Usage](#-usage)
 - [Project Structure](#-project-structure)
 - [NoisIE Model](#-noisie-model)
+- [Neo4J Database](#-neo4j-database)
 - [Contributing](#-contributing)
 - [License](#-license)
 - [Attribution](#-attribution)
@@ -128,7 +129,7 @@ maintkg/
 └── README.md                   # Project documentation
 ```
 
-## 🤖 NoisIE Model
+## 🤖 NoisIE Model Checkpoint
 
 Download the pretrained NoisIE model:
 
@@ -136,8 +137,58 @@ Download the pretrained NoisIE model:
 python ./src/noisie/download_checkpoint.py
 ```
 
-This will download the model checkpoint to `./src/noisie/lightning_logs/`, making it available when you run the MaintKG process.
+This will:
 
+- Create the `./src/noisie/lightning_logs/` directory
+- Download and verify the model checkpoints
+- Make the model available for the MaintKG pipeline
+
+## 🗄️ Neo4j Database
+
+### Installation
+
+1. **Download Neo4j**
+   - Get [Neo4j Desktop](https://neo4j.com/download/) or use Docker:
+     ```bash
+     docker run \
+       --name maintkg-neo4j \
+       -p 7474:7474 -p 7687:7687 \
+       -e NEO4J_AUTH=neo4j/password \
+       neo4j:4.4
+     ```
+
+2. **Configure Database**
+   ```bash
+   # Default credentials in .env
+   NEO4J__URI=bolt://localhost:7687
+   NEO4J__USERNAME=neo4j
+   NEO4J__PASSWORD=password
+   NEO4J__DATABASE=neo4j
+   ```
+
+### Thesis Reference Database
+
+To explore the exact database used in the MaintKG thesis:
+
+1. **Download the dump file**:
+   - [Download Neo4j Dump File](https://drive.google.com/file/d/15GGU0u1zQN-Q0gC9aGcc-H11o9TX84qK/view?usp=sharing)
+
+2. **Restore the database**:
+   ```bash
+   # Using neo4j-admin
+   neo4j-admin load --from=/path/to/dump.dump --database=neo4j
+
+   # Or with Docker
+   docker exec maintkg-neo4j \
+     neo4j-admin load --from=/imports/dump.dump --database=neo4j
+   ```
+
+3. **Access the database**:
+   - Web interface: http://localhost:7474
+   - Bolt connection: bolt://localhost:7687
+
+### Example Queries
+Example queries that correspond to the competency questions (CQs) outlined in the MaintKG thesis chapter can be found in `./notebooks/example_queries.ipynb`.
 
 ## 🤝 Contributing
 
