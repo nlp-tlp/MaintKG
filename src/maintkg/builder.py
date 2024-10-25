@@ -14,6 +14,7 @@ from neo4j import GraphDatabase, Session
 from tqdm import tqdm
 from typing_extensions import Self
 
+from noisie._base import NoisIE
 from maintkg.models import Node, ProcessingSummary, Relation, Triple
 from maintkg.settings import Settings
 from maintkg.utils import (
@@ -28,12 +29,10 @@ from maintkg.utils import (
 class GraphBuilder:
     """MaintKG Graph Builder."""
 
-    def __init__(
-        self: "GraphBuilder", settings: Settings, cleanup: bool = False
-    ) -> None:
+    def __init__(self: "GraphBuilder", cleanup: bool = False) -> None:
         """Initialise the GraphBuilder."""
         super().__init__()
-        self.settings = settings
+        self.settings = Settings()
         self.cleanup = cleanup
 
         # Format datetime in a Windows-friendly format (e.g., YYYY-MM-DD_HH-MM-SS)
@@ -93,21 +92,29 @@ class GraphBuilder:
         df = builder_utils.format_date_column(df, self.settings)
         # Calculate unplanned records
         summary["unplanned_records_all"] = len(
-            df[df[self.settings.type_col].isin(self.settings.unplanned_type_codes)]
+            df[
+                df[self.settings.processing.type_col].isin(
+                    self.settings.input.unplanned_type_codes
+                )
+            ]
         )
         # Filter by systems if specified
-        if self.settings.systems:
-            logger.info(f"Filtering for systems: {self.settings.systems}")
-            pattern = "|".join(self.settings.systems)
+        if self.settings.processing.systems:
+            logger.info(f"Filtering for systems: {self.settings.processing.systems}")
+            pattern = "|".join(self.settings.processing.systems)
             df = df[
-                df[self.settings.floc_col].str.contains(pattern, case=False, na=False)
+                df[self.settings.processing.floc_col].str.contains(
+                    pattern, case=False, na=False
+                )
             ]
-            summary["focus_systems"] = df[self.settings.floc_col].unique().tolist()
+            summary["focus_systems"] = (
+                df[self.settings.processing.floc_col].unique().tolist()
+            )
             summary["focus_system_count"] = len(summary["focus_systems"])
 
-        if self.settings.limit:
-            logger.info(f"Limiting analysis to {self.settings.limit} records")
-            df = df.sample(n=self.settings.limit)
+        if self.settings.dev and self.settings.dev.limit:
+            logger.info(f"Limiting analysis to {self.settings.dev.limit} records")
+            df = df.sample(n=self.settings.dev.limit)
         logger.info(f"Filtered to {len(df)} records")
 
         # Calculate record summaries
@@ -118,8 +125,12 @@ class GraphBuilder:
         summary["record_date_durations_by_floc"] = date_durations
 
         # Filter for unplanned work only
-        if self.settings.unplanned_only:
-            df = df[df[self.settings.type_col].isin(self.settings.unplanned_type_codes)]
+        if self.settings.processing.unplanned_only:
+            df = df[
+                df[self.settings.processing.type_col].isin(
+                    self.settings.input.unplanned_type_codes
+                )
+            ]
 
         if len(df) == 0:
             raise RuntimeError("DataFrame has no data after filtering.")
@@ -130,20 +141,22 @@ class GraphBuilder:
                 "total_records": len(df),
                 "unplanned_records": len(
                     df[
-                        df[self.settings.type_col].isin(
-                            self.settings.unplanned_type_codes
+                        df[self.settings.processing.type_col].isin(
+                            self.settings.input.unplanned_type_codes
                         )
                     ]
                 ),
                 "planned_records": len(
                     df[
-                        df[self.settings.type_col].isin(
-                            self.settings.planned_type_codes
+                        df[self.settings.processing.type_col].isin(
+                            self.settings.input.planned_type_codes
                         )
                     ]
                 ),
-                "unique_flocs_unplanned": len(df[self.settings.floc_col].unique()),
-                "unque_floc_record_counts": df[self.settings.floc_col]
+                "unique_flocs_unplanned": len(
+                    df[self.settings.processing.floc_col].unique()
+                ),
+                "unque_floc_record_counts": df[self.settings.processing.floc_col]
                 .value_counts()
                 .to_dict(),
             }
@@ -156,9 +169,9 @@ class GraphBuilder:
         )
 
         # Preprocess text fields
-        df["input"] = df[self.settings.text_col].apply(
+        df["input"] = df[self.settings.processing.text_col].apply(
             lambda x: general_utils.simple_preprocessing(
-                text=str(x), non_semantic_codes=self.settings.non_semantic_codes
+                text=str(x), non_semantic_codes=self.settings.input.non_semantic_codes
             )
         )
 
@@ -197,16 +210,22 @@ class GraphBuilder:
 
             # Process new inputs if any exist
             if new_inputs:
+
+                # Load NoisIE model
+                logger.info("Loading NoisIE model")
+                noisie = NoisIE(
+                    batch_size=self.settings.noisie.batch_size, device="cuda"
+                )
+                logger.info("NoisIE model loaded")
+
                 batches = [
-                    new_inputs[i : i + self.settings.IE_MODEL_BATCH_SIZE]
-                    for i in range(
-                        0, len(new_inputs), self.settings.IE_MODEL_BATCH_SIZE
-                    )
+                    new_inputs[i : i + self.settings.noisie.batch_size]
+                    for i in range(0, len(new_inputs), self.settings.noisie.batch_size)
                 ]
                 logger.info(f"Created {len(batches)} batches for processing")
 
                 new_preds, failed_preds = extraction_utils.process_new_predictions(
-                    batches, self.settings.cache_file
+                    noisie, batches, self.settings.cache_file
                 )
                 all_preds.update(new_preds)
 
@@ -284,7 +303,9 @@ class GraphBuilder:
                         else:
                             summary[message] = {"count": 1, "instances": [t]}
 
-                    if self.settings.REMOVE_SUBSUMPTION & (t[4].lower() == "is_a"):
+                    if self.settings.processing.remove_subsumption & (
+                        t[4].lower() == "is_a"
+                    ):
                         logger.error(
                             f"Triple {t} is invalid (reason: subsumption) - skipping."
                         )
@@ -399,9 +420,6 @@ class GraphBuilder:
 
         self.save("refinement_summary", "json", summary)
 
-        # if self.settings.dev and self.settings.limit < 100:
-        #     logger.debug(json.dumps(data, indent=2))
-
         # Calculate Pointwise Mutual Information of Semantic Triples.
         pmi_stats = general_utils.calc_pmi_probabilities(triples=semantic_triples)
 
@@ -468,8 +486,8 @@ class GraphBuilder:
     def init_graph(self: Self) -> None:
         """Initialise the Neo4J driver."""
         self.driver = GraphDatabase.driver(
-            uri=self.settings.NEO4J_URI,
-            auth=(self.settings.NEO4J_USERNAME, self.settings.NEO4J_PASSWORD),
+            uri=self.settings.neo4j.uri,
+            auth=(self.settings.neo4j.username, self.settings.neo4j.password),
         )
 
     def close(self: Self) -> None:
@@ -478,7 +496,7 @@ class GraphBuilder:
 
     def create_session(self: Self) -> Session:
         """Create a session for the Neo4J database."""
-        return self.driver.session(database=self.settings.NEO4J_DATABASE)
+        return self.driver.session(database=self.settings.neo4j.database)
 
     def _create_db_triple(self: Self, session: Session, triple: Triple) -> Any:
         """Create a triple in the Neo4J database."""
@@ -487,14 +505,14 @@ class GraphBuilder:
             triple.head.name,
             triple.head.type,
             triple.head.properties,
-            {self.settings.start_date_col},
+            {self.settings.processing.start_date_col},
         )
         tail_node = session.execute_write(
             builder_utils.create_or_get_node,
             triple.tail.name,
             triple.tail.type,
             triple.tail.properties,
-            {self.settings.start_date_col},
+            {self.settings.processing.start_date_col},
         )
         return session.execute_write(
             builder_utils.create_relationship,
@@ -613,7 +631,7 @@ class GraphBuilder:
                         )
                         relation_ids.append(relation_id)
 
-                    # Create `(System)->(Record)`` triple
+                    # Create `(System)->(Record)` triple
                     system_node = Node(
                         name=str(record["properties"]["floc"]), type="System"
                     )

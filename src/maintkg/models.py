@@ -1,6 +1,6 @@
 """Models."""
 
-from typing import Any, Dict, List, Optional, Tuple, TypeVar
+from typing import Any, Dict, List, Optional, Tuple, TypedDict, TypeVar
 
 from pydantic import BaseModel, Field
 
@@ -57,7 +57,7 @@ class Triple(BaseModel):
     tail: Node
 
 
-class RecordTypeSummary(BaseModel):
+class RecordTypeSummary(TypedDict):
     """Summary of record types for a FLOC."""
 
     planned: str
@@ -66,14 +66,14 @@ class RecordTypeSummary(BaseModel):
     total: int
 
 
-class DateDurationSummary(BaseModel):
+class DateDurationSummary(TypedDict):
     """Summary of date durations for a FLOC."""
 
     min: str
     max: str
 
 
-class ProcessingSummary(BaseModel):
+class ProcessingSummary(TypedDict):
     """Complete summary of data processing."""
 
     total_records_all: int
