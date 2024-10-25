@@ -11,7 +11,7 @@ from torch.utils.data import Dataset
 from transformers.optimization import AdamW
 from typing_extensions import Self
 
-from rebel.scheduler import get_inverse_square_root_schedule_with_warmup
+from noisie.scheduler import get_inverse_square_root_schedule_with_warmup
 
 arg_to_scheduler = {
     "inverse_square_root": get_inverse_square_root_schedule_with_warmup,
