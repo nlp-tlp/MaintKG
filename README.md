@@ -110,16 +110,13 @@ maintkg/
 │   │   ├── settings.py          # Configuration management
 │   │   └── utils/               # Utility functions
 │   ├── noisie/                   # NoisIE package
-│   │   ├── __init__.py
-│   │   ├── download_checkpoint.py  # Model checkpoint downloader
-│   │   ├── lightning_logs/      # Model checkpoints
-│   │   │   └── .gitkeep
-│   │   ├── data/                # MaintNormIE corpus
-│   │   │   └── README.md        # Data documentation
-│   └── rebel/                    # REBEL package
 │       ├── __init__.py
-│       ├── extractor.py         # Relation extraction
-│       └── utils/               # REBEL utilities
+│       ├── download_checkpoint.py  # Model checkpoint downloader
+│       ├── lightning_logs/      # Model checkpoints
+│       │   └── .gitkeep
+│       ├── data/                # MaintNormIE corpus
+│           └── README.md        # Data documentation
+
 ├── .git/                        # Git repository
 ├── .gitignore                   # Git ignore patterns
 ├── .pre-commit-config.yaml      # Pre-commit hooks
@@ -129,9 +126,11 @@ maintkg/
 └── README.md                   # Project documentation
 ```
 
-## 🤖 NoisIE Model Checkpoint
+## 🤖 NoisIE Model
 
-Download the pretrained NoisIE model:
+### Downloading the Pretrained NoisIE Checkpoint
+
+By default, the MaintKG process uses a pretrained NoisIE checkpoint. To download the pretrained NoisIE model:
 
 ```bash
 python ./src/noisie/download_checkpoint.py
@@ -142,6 +141,12 @@ This will:
 - Create the `./src/noisie/lightning_logs/` directory
 - Download and verify the model checkpoints
 - Make the model available for the MaintKG pipeline
+
+### Training your own NoisIE model
+
+> [!IMPORTANT]
+> This section is still under development. Check back soon or reach out to us!
+
 
 ## 🗄️ Neo4j Database
 
