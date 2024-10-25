@@ -13,9 +13,7 @@ readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
     "pydantic",
-    "pydantic-settings",
-    "requests",
-    "types-requests"
+    "pydantic-settings"
 ]
 
 [project.optional-dependencies]
