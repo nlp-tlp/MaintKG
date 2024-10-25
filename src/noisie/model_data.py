@@ -1,17 +1,17 @@
 """"""
 
-from torch.utils.data import Dataset
-import torch
-from pytorch_lightning import LightningModule
 import json
 from collections import Counter
-from typing import List, Dict, Tuple, Set, Union
-from typing_extensions import Self
+from typing import Dict, List, Set, Tuple, Union
+
+import torch
 from loguru import logger
-
+from pytorch_lightning import LightningModule
+from torch.utils.data import Dataset
 from transformers.optimization import AdamW
-from rebel.scheduler import get_inverse_square_root_schedule_with_warmup
+from typing_extensions import Self
 
+from rebel.scheduler import get_inverse_square_root_schedule_with_warmup
 
 arg_to_scheduler = {
     "inverse_square_root": get_inverse_square_root_schedule_with_warmup,
@@ -296,9 +296,10 @@ def filter_relations(
     issues["duplicates"] = len(relations) - len(filtered_relations_duplicates)
 
     # Filter out self-referencing relations
-    filtered_relations_self_reference, issues_relation_self_reference = (
-        filter_relations_on_self_referencing(filtered_relations_duplicates)
-    )
+    (
+        filtered_relations_self_reference,
+        issues_relation_self_reference,
+    ) = filter_relations_on_self_referencing(filtered_relations_duplicates)
     issues["self_references"] = issues_relation_self_reference
 
     # Filter relations based on rules
@@ -621,7 +622,6 @@ class ByT5Model(LightningModule):
         return decoded_preds, float(forward_output["loss"].mean().detach())
 
     def validation_step(self, batch: dict):
-
         decoded_preds, loss = self.val_test_step(batch)
 
         print("\n Predictions:")
@@ -639,9 +639,9 @@ class ByT5Model(LightningModule):
 
         outputs = {}
         # TODO: add input_str into structure fnc
-        outputs["predictions"] = (
-            []
-        )  # [structure_noisie_string(p) for p in decoded_preds]
+        outputs[
+            "predictions"
+        ] = []  # [structure_noisie_string(p) for p in decoded_preds]
         outputs["labels"] = []  # [structure_noisie_string(l) for l in decoded_labels]
 
         outputs["inputs"] = self.tokenizer.batch_decode(

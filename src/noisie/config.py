@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import Optional, Union
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 base_dir = Path(__file__).resolve().parent
 
