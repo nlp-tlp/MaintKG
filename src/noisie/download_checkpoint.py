@@ -109,9 +109,9 @@ def download_checkpoints(url: str, target_dir: Path) -> None:
         raise CheckpointDownloaderError(error_msg) from e
 
 
-def main() -> Optional[NoReturn]:
+def main() -> None:
     """
-    Function that orchestrate checkpoint downloading.
+    Function that orchestrates checkpoint downloading.
 
     This function:
     1. Ensures gdown is installed
@@ -120,7 +120,7 @@ def main() -> Optional[NoReturn]:
     4. Handles user interaction
 
     Returns:
-        None, or exits with error code 1 on failure.
+        None
     """
     try:
         # Initialize
@@ -147,16 +147,17 @@ def main() -> Optional[NoReturn]:
         if not sys.flags.interactive:
             input("\nPress Enter to exit...")
             sys.exit(1)
-        return
+        return None
 
     except KeyboardInterrupt:
         logger.info("Operation cancelled by user")
         if not sys.flags.interactive:
             sys.exit(1)
-        return
+        return None
 
     if not sys.flags.interactive:
         input("\nPress Enter to exit...")
+    return None
 
 
 if __name__ == "__main__":
