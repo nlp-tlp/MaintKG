@@ -1,11 +1,13 @@
 output/*
 notebooks/assets/*
 _ontology
+cache/*
 
 # Keep the directories with .gitkeep
 !output/.gitkeep
 !notebooks/.gitkeep
 !model/.gitkeep
+!cache/.gitkeep
 
 
 # Byte-compiled / optimized / DLL files
