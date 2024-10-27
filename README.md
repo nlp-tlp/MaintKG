@@ -128,9 +128,11 @@ maintkg/
 
 ## 🤖 NoisIE Model
 
-### Downloading the Pretrained NoisIE Checkpoint
+NoisIE is a sequence-to-sequence normalization and semantic information extraction model that processes raw maintenance text into high-quality semantically structured output using specialised tags for normalisations, entities, and relations.
 
-By default, the MaintKG process uses a pretrained NoisIE checkpoint. To download the pretrained NoisIE model:
+### Pretrained Model Setup
+
+By default, the MaintKG process uses a pretrained NoisIE checkpoint. To use the pretrained NoisIE checkpoint:
 
 ```bash
 python ./src/noisie/download_checkpoint.py
@@ -142,12 +144,60 @@ This will:
 - Download and verify the model checkpoints
 - Make the model available for the MaintKG pipeline
 
-### Training your own NoisIE model
+### Training Custom Models
 
-> [!IMPORTANT]
-> This section is still under development. Check back soon or reach out to us!
+#### Prerequisites
 
+- **Dataset Access**: The original MaintNormIE dataset used in the thesis research requires special access. Please contact us to:
+  - Access the MaintNormIE dataset
+  - Use MaintNormIE for pretraining your own models
+  - Discuss custom training requirements
 
+To retrain NoisIE on the MaintNormIE dataset or to use it as pretraining for your own dataset, please contact us.
+
+#### Dataset Format
+
+Training data should be in JSONL format with paired input-output examples:
+
+```jsonl
+{
+    "input": "1570-3week service 2-3/3/10",
+    "output": "<entity> service <activity>"
+}
+{
+    "input": "pedestal bearing 3 guage faulty",
+    "output": "<norm> guage [ gauge ] <relation> faulty <state> gauge <object> has patient <relation> pedestal bearing <object> bearing <object> is a <relation> pedestal bearing <object> gauge <object> has part"
+}
+```
+
+The input-output pairs follow these conventions:
+- **Input**: Raw maintenance text
+- **Output**: Linearized text with semantic tags:
+  - `<norm>`: Normalization annotations
+  - `<entity>`: Entity spans
+  - `<relation>`: Relationship markers
+
+For detailed information about the tagging scheme, please refer to the thesis documentation.
+
+#### Training Steps
+
+1. **Data Preparation**:
+   - Place your JSONL dataset in `./src/noisie/data/`
+   - Update the data path in `train.py`:
+     ```python
+     # In ./src/noisie/train.py
+     data_path = base_dir / "data" / "your_dataset.jsonl"
+     ```
+
+2. **Start Training**:
+   ```bash
+   python ./src/noisie/train.py
+   ```
+
+3. **Monitor Progress**:
+   - Checkpoints and logs are saved in `./src/noisie/lightning_logs/`
+   - Track training progress using TensorBoard
+   - Model checkpoints are saved at regular intervals
 ## 🗄️ Neo4j Database
 
 ### Installation
