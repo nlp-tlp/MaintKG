@@ -198,6 +198,12 @@ For detailed information about the tagging scheme, please refer to the thesis do
    - Checkpoints and logs are saved in `./src/noisie/lightning_logs/`
    - Track training progress using TensorBoard
    - Model checkpoints are saved at regular intervals
+
+### Evaluating NoisIE
+
+> [!IMPORTANT]
+> **Status Update**: The evaluation pipeline is currently undergoing final refinements and code review. For immediate evaluation needs, please see `./model_data.py::evaluate_model`.
+
 ## 🗄️ Neo4j Database
 
 ### Installation
