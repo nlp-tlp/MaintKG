@@ -3,7 +3,7 @@
 import random
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import jsonlines
 import pytorch_lightning as pl
@@ -25,6 +25,7 @@ from transformers import (
     T5ForConditionalGeneration,
 )
 from transformers.optimization import AdamW
+from typing_extensions import Self
 
 from noisie.config import ModelConfig
 from noisie.scheduler import get_inverse_square_root_schedule_with_warmup
@@ -62,60 +63,95 @@ class TrainingConfig:
 class TranslationDataset(Dataset):
     """Dataset for sequence-to-sequence translation tasks."""
 
-    def __init__(self, encodings: Dict[str, List]) -> None:
+    def __init__(self: Self, encodings: Dict[str, List]) -> None:
         """Initialise the dataset with a dictionary of encodings."""
         self.encodings = encodings
 
-    def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
+    def __getitem__(self: Self, idx: int) -> Dict[str, torch.Tensor]:
         """Get a single item from the dataset."""
         return {key: torch.tensor(val[idx]) for key, val in self.encodings.items()}
 
-    def __len__(self) -> int:
+    def __len__(self: Self) -> int:
         """Get the number of items in the dataset."""
         return len(self.encodings["input_ids"])
 
 
 class ByT5Model(LightningModule):
-    """PyTorch Lightning module for ByT5 model."""
+    """PyTorch Lightning module for sequence-to-sequence text generation using ByT5."""
 
     def __init__(
-        self,
+        self: Self,
         model: T5ForConditionalGeneration,
         tokenizer: PreTrainedTokenizer,
         config: TrainingConfig,
     ) -> None:
-        """Initialise the model with the pretrained T5 model and tokenizer."""
+        """Initialize model components and training configuration.
+
+        Args:
+            model: Pretrained T5 model for sequence generation
+            tokenizer: Tokenizer for text processing
+            config: Training configuration parameters
+        """
         super().__init__()
         self.save_hyperparameters(ignore=["model"])
         self.model = model
         self.tokenizer = tokenizer
         self.config = config
         self.loss_fn = torch.nn.CrossEntropyLoss(ignore_index=-100)
-        self.train_step_outputs = []
-        self.validation_step_outputs = []
-        # self.output_dir = output_dir
 
-    def forward(self, input_ids, attention_mask=None, decoder_input_ids=None):
-        return self.model(
-            input_ids=input_ids,
-            attention_mask=attention_mask,
-            decoder_input_ids=decoder_input_ids,
-        )
+    def generate(
+        self: Self,
+        input_ids: torch.Tensor,
+        attention_mask: torch.Tensor,
+        **generate_kwargs: Any,
+    ) -> torch.Tensor:
+        """Generate sequences using the model.
 
-    def generate(self, input_ids, attention_mask, **generate_kwargs):
+        Args:
+            input_ids: Input token IDs
+            attention_mask: Mask for input sequence
+            **generate_kwargs: Additional generation parameters
+
+        Returns:
+            Generated token sequences
+        """
         return self.model.generate(
             input_ids, attention_mask=attention_mask, **generate_kwargs
         )
 
-    def forward(self, inputs, labels) -> dict:
+    def forward(
+        self: Self,
+        inputs: Dict[str, torch.Tensor],
+        labels: torch.Tensor,
+    ) -> Dict[str, torch.Tensor]:
+        """Process inputs and compute loss.
+
+        Args:
+            inputs: Dictionary containing input tensors
+            labels: Target labels for loss computation
+
+        Returns:
+            Dictionary containing loss and logits
+        """
         outputs = self.model(input_ids=inputs["input_ids"], labels=labels)
         logits = outputs["logits"]
         loss = self.loss_fn(logits.view(-1, logits.shape[-1]), labels.view(-1))
-        output_dict = {"loss": loss, "logits": logits}
+        return {"loss": loss, "logits": logits}
 
-        return output_dict
+    def training_step(
+        self: Self,
+        batch: Dict[str, torch.Tensor],
+        batch_idx: int,
+    ) -> torch.Tensor:
+        """Execute single training step.
 
-    def training_step(self, batch: dict, batch_idx: int) -> torch.Tensor:
+        Args:
+            batch: Input batch containing text and labels
+            batch_idx: Index of current batch
+
+        Returns:
+            Computed loss for the batch
+        """
         labels = batch.pop("labels")
         labels_original = labels.clone()
 
@@ -128,13 +164,19 @@ class ByT5Model(LightningModule):
         forward_output = self.forward(batch, labels)
         self.log("loss", forward_output["loss"])
         batch["labels"] = labels_original
-        # self.train_step_outputs.append(forward_output["loss"])
-
-        # print(f'Train step loss: {forward_output["loss"]}')
-
         return forward_output["loss"]
 
-    def validation_step(self, batch: dict):
+    def validation_step(
+        self: Self,
+        batch: Dict[str, torch.Tensor],
+        batch_idx: int,
+    ) -> None:
+        """Execute single validation step.
+
+        Args:
+            batch: Input batch containing text and labels
+            batch_idx: Index of current batch
+        """
         gen_kwargs = {
             "max_length": self.config.max_length,
             "early_stopping": False,
@@ -151,9 +193,9 @@ class ByT5Model(LightningModule):
             generated_tokens, skip_special_tokens=True
         )
 
-        print("\n Predictions:")
+        logger.info("\n Predictions:")
         for pred in decoded_preds:
-            print(pred, "\n")
+            logger.info(f"{pred}\n")
 
         labels = batch.pop("labels")
         batch["decoder_input_ids"] = torch.where(
@@ -169,9 +211,8 @@ class ByT5Model(LightningModule):
 
         self.log("val_loss", float(forward_output["loss"]))
 
-    def configure_optimizers(self):
-        """
-        FROM PYTORCH LIGHTNING DOCUMENTATION
+    def configure_optimizers(self: Self) -> Tuple[List, List]:
+        """Configure the optimizers and learning rate schedulers.
 
         Choose what optimizers and learning-rate schedulers to use in your optimization.
         Normally you'd need one. But in the case of GANs or similar you might have multiple.
@@ -195,7 +236,7 @@ class ByT5Model(LightningModule):
                     for n, p in self.model.named_parameters()
                     if not any(nd in n for nd in no_decay)
                 ],
-                "weight_decay": 0.01,  # self.hparams.weight_decay,
+                "weight_decay": 0.01,
             },
             {
                 "params": [
@@ -210,11 +251,9 @@ class ByT5Model(LightningModule):
         optimizer_kwargs = {
             "betas": (0.9, 0.999),
             "eps": 0.00000001,
-            # "betas": (self.hparams.adam_beta1, self.hparams.adam_beta2),
-            # "eps": self.hparams.adam_epsilon,
         }
 
-        optimizer_kwargs["lr"] = 0.00005  # self.hparams.learning_rate
+        optimizer_kwargs["lr"] = 0.00005
 
         optimizer = optimizer_cls(optimizer_grouped_parameters, **optimizer_kwargs)
 
@@ -224,17 +263,15 @@ class ByT5Model(LightningModule):
 
         return [optimizer], [{"scheduler": lr_scheduler, "interval": "step"}]
 
-    def _get_lr_scheduler(self, num_training_steps, optimizer):
-        schedule_func = arg_to_scheduler[
-            "inverse_square_root"
-            # self.hparams.lr_scheduler
-        ]
-        scheduler = schedule_func(
+    def _get_lr_scheduler(
+        self: Self, num_training_steps: int, optimizer: torch.optim.Optimizer
+    ) -> torch.optim.lr_scheduler.LRScheduler:
+        """Get the learning rate scheduler."""
+        schedule_func = arg_to_scheduler["inverse_square_root"]
+        return schedule_func(
             optimizer,
             num_warmup_steps=1000,
-            #   num_warmup_steps=self.hparams.warmup_steps
         )
-        return scheduler
 
 
 def load_dataset(
@@ -256,7 +293,7 @@ def load_dataset(
         inputs, targets, train_size=config.train_test_split, random_state=config.seed
     )
 
-    def tokenize_data(texts: List[str]) -> Dict[str, List]:
+    def tokenize_data(texts: List[str]) -> List[Dict[str, List]]:
         """Tokenize a list of texts."""
         return tokenizer(
             texts,
@@ -285,9 +322,9 @@ def load_dataset(
     return TranslationDataset(train_encodings), TranslationDataset(val_encodings)
 
 
-def setup_tb_logging_dir(base_dir: Path) -> Path:
-    """Set up tensorboard directory structure."""
-    log_dir = base_dir / "tb_logs"
+def setup_logging_dir(base_dir: Path) -> Path:
+    """Set up logging directory structure."""
+    log_dir = base_dir / "lightning_logs"
     log_dir.mkdir(parents=True, exist_ok=True)
     logger.info(f"Logging directory set up at {log_dir}")
     return log_dir
@@ -301,7 +338,7 @@ def main() -> None:
 
     # Set up directory structure
     base_dir = Path(__file__).resolve().parent
-    log_dir = setup_tb_logging_dir(base_dir)
+    log_dir = setup_logging_dir(base_dir)
 
     # Initialise tokenizer and model
     tokenizer = AutoTokenizer.from_pretrained(config.model_name, use_fast=True)
@@ -376,8 +413,7 @@ def main() -> None:
     )
 
     # Log some initial information
-    # logger.info(f"Training logs will be stored in: {log_dir}")
-    # logger.info(f"Checkpoint directory: {checkpoint_dir}")
+    logger.info(f"Training logs will be stored in: {log_dir}")
     logger.info(f"TensorBoard logs directory: {tb_logger.log_dir}")
 
     # Train model
